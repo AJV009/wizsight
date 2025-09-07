@@ -1,0 +1,1 @@
+"""API package for WizSight FastAPI application."""

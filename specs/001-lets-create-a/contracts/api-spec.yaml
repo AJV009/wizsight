@@ -1,0 +1,346 @@
+openapi: 3.0.3
+info:
+  title: WizLight Control API
+  description: Simple API for discovering and controlling WiZ smart lights on local network
+  version: 1.0.0
+  contact:
+    name: WizSight System
+    
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /scan:
+    get:
+      summary: Discover WiZ lights on network
+      description: Performs UDP broadcast to discover all available WiZ lights
+      parameters:
+        - name: broadcast_address
+          in: query
+          description: Network broadcast address to scan
+          required: false
+          schema:
+            type: string
+            format: ipv4
+            default: "255.255.255.255"
+        - name: timeout
+          in: query
+          description: Discovery timeout in seconds
+          required: false
+          schema:
+            type: number
+            minimum: 1.0
+            maximum: 30.0
+            default: 5.0
+      responses:
+        '200':
+          description: Discovery completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '500':
+          description: Discovery failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lights/{ip}/toggle:
+    post:
+      summary: Toggle light power state
+      description: Switches light between on and off states
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+            format: ipv4
+          description: IP address of the target light
+      responses:
+        '200':
+          description: Toggle operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControlResponse'
+        '400':
+          description: Invalid parameters or light unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '408':
+          description: Request timeout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lights/{ip}/brightness:
+    post:
+      summary: Set light brightness
+      description: Adjusts the brightness level of the specified light
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+            format: ipv4
+          description: IP address of the target light
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - brightness
+              properties:
+                brightness:
+                  type: integer
+                  minimum: 0
+                  maximum: 255
+                  description: Brightness level (0-255)
+                force_on:
+                  type: boolean
+                  default: true
+                  description: Turn light on if currently off
+      responses:
+        '200':
+          description: Brightness set successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControlResponse'
+        '400':
+          description: Invalid parameters or light unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Brightness value out of range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lights/{ip}/colortemp:
+    post:
+      summary: Set light color temperature
+      description: Adjusts the color temperature of the specified light
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+            format: ipv4
+          description: IP address of the target light
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - colortemp
+              properties:
+                colortemp:
+                  type: integer
+                  minimum: 1000
+                  maximum: 10000
+                  description: Color temperature in Kelvin
+                force_on:
+                  type: boolean
+                  default: true
+                  description: Turn light on if currently off
+      responses:
+        '200':
+          description: Color temperature set successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControlResponse'
+        '400':
+          description: Invalid parameters or light unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Color temperature value out of range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lights/{ip}/state:
+    get:
+      summary: Get current light state
+      description: Retrieves the current state and settings of the specified light
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+            format: ipv4
+          description: IP address of the target light
+      responses:
+        '200':
+          description: Light state retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LightDevice'
+        '400':
+          description: Light unreachable or communication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Light not found at specified IP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    LightDevice:
+      type: object
+      required:
+        - ip
+        - state
+        - available
+      properties:
+        ip:
+          type: string
+          format: ipv4
+          description: IP address of the light
+        mac:
+          type: string
+          pattern: '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+          description: MAC address of the device
+        name:
+          type: string
+          description: User-friendly device name
+        state:
+          type: boolean
+          description: Power state (true=on, false=off)
+        brightness:
+          type: integer
+          minimum: 0
+          maximum: 255
+          description: Current brightness level
+        rgb:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 255
+          minItems: 3
+          maxItems: 3
+          description: RGB color values [R, G, B]
+        colortemp:
+          type: integer
+          minimum: 1000
+          maximum: 10000
+          description: Color temperature in Kelvin
+        scene:
+          type: integer
+          minimum: 1
+          maximum: 37
+          description: Active scene ID
+        available:
+          type: boolean
+          description: Whether device is currently reachable
+        last_seen:
+          type: string
+          format: date-time
+          description: Timestamp of last successful communication
+
+    ScanResponse:
+      type: object
+      required:
+        - scan_id
+        - status
+        - discovered_count
+        - devices
+      properties:
+        scan_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this scan
+        status:
+          type: string
+          enum: [in_progress, completed, failed]
+          description: Current status of the scan
+        discovered_count:
+          type: integer
+          minimum: 0
+          description: Number of lights discovered
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/LightDevice'
+          description: List of discovered lights
+        completed_at:
+          type: string
+          format: date-time
+          description: When the scan finished
+        error_message:
+          type: string
+          description: Error details if scan failed
+
+    ControlResponse:
+      type: object
+      required:
+        - success
+        - target_ip
+        - response_time_ms
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation succeeded
+        target_ip:
+          type: string
+          format: ipv4
+          description: IP address that was controlled
+        previous_state:
+          $ref: '#/components/schemas/LightDevice'
+        new_state:
+          $ref: '#/components/schemas/LightDevice'
+        error_code:
+          type: string
+          enum: [DEVICE_UNREACHABLE, INVALID_PARAMETERS, DEVICE_BUSY, NETWORK_ERROR, UNKNOWN_ERROR]
+          description: Error classification if operation failed
+        error_message:
+          type: string
+          description: Human-readable error description
+        response_time_ms:
+          type: number
+          minimum: 0
+          description: Operation duration in milliseconds
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type classification
+        message:
+          type: string
+          description: Human-readable error description
+        details:
+          type: object
+          description: Additional error context
