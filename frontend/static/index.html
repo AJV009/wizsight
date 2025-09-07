@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WizSight - WiZ Light Controller</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Heroicons for proper SVG icons -->
+    <script src="https://unpkg.com/heroicons@2.0.18/24/outline/index.js" type="module"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-content">
+            <div class="nav-brand">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4"/>
+                    <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+                    <path d="M15 12c0-3.866-3.134-7-7-7s-7 3.134-7 7 3.134 7 7 7c1.933 0 3.683-.787 4.95-2.05"/>
+                </svg>
+                <h1>WizSight</h1>
+            </div>
+            <div class="nav-status">
+                <span id="connection-status">Ready</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard">
+        <!-- Discovery Panel -->
+        <section class="dashboard-card discovery-panel">
+            <div class="card-header">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <h2>Network Discovery</h2>
+            </div>
+            <div class="card-content">
+                <div class="discovery-controls">
+                    <button id="scan-btn" class="primary-btn">
+                        <span class="btn-text">Scan Network</span>
+                        <div class="loading-spinner" style="display: none;"></div>
+                    </button>
+                    <div class="scan-options">
+                        <div class="input-group">
+                            <label for="broadcast-address">Network:</label>
+                            <input 
+                                type="text" 
+                                id="broadcast-address" 
+                                placeholder="192.168.0.255"
+                                value="192.168.0.255"
+                            />
+                        </div>
+                        <div class="input-group">
+                            <label for="timeout">Timeout:</label>
+                            <input 
+                                type="number" 
+                                id="timeout" 
+                                min="1" 
+                                max="30" 
+                                value="5"
+                                step="0.5"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div id="scan-results" class="scan-results"></div>
+            </div>
+        </section>
+
+        <!-- Manual Control Panel -->
+        <section class="dashboard-card control-panel">
+            <div class="card-header">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <h2>Manual Control</h2>
+            </div>
+            <div class="card-content">
+                <div class="control-form">
+                    <div class="input-group">
+                        <label for="light-ip">Light IP Address:</label>
+                        <input 
+                            type="text" 
+                            id="light-ip" 
+                            placeholder="192.168.0.100"
+                            pattern="\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
+                        />
+                    </div>
+                    
+                    <div class="control-buttons">
+                        <button id="toggle-btn" class="control-btn">
+                            <span class="btn-text">Toggle</span>
+                            <div class="loading-spinner" style="display: none;"></div>
+                        </button>
+                        <button id="state-btn" class="control-btn secondary">
+                            <span class="btn-text">Get State</span>
+                            <div class="loading-spinner" style="display: none;"></div>
+                        </button>
+                    </div>
+
+                    <div class="brightness-control">
+                        <label for="brightness-slider">Brightness:</label>
+                        <div class="slider-container">
+                            <input 
+                                type="range" 
+                                id="brightness-slider" 
+                                min="0" 
+                                max="255" 
+                                value="128"
+                            />
+                            <input 
+                                type="number" 
+                                id="brightness-value"
+                                min="0"
+                                max="255"
+                                value="128"
+                            />
+                        </div>
+                        <div class="control-row">
+                            <button id="brightness-btn" class="control-btn">
+                                <span class="btn-text">Set Brightness</span>
+                                <div class="loading-spinner" style="display: none;"></div>
+                            </button>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="force-on" checked> Force On
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="colortemp-control">
+                        <label for="colortemp-slider">Color Temperature:</label>
+                        <div class="slider-container">
+                            <input 
+                                type="range" 
+                                id="colortemp-slider" 
+                                min="1000" 
+                                max="10000" 
+                                value="4000"
+                                step="100"
+                            />
+                            <input 
+                                type="number" 
+                                id="colortemp-value"
+                                min="1000"
+                                max="10000"
+                                step="100"
+                                value="4000"
+                            />
+                        </div>
+                        <div class="colortemp-presets">
+                            <button class="preset-btn" data-temp="2700">Warm</button>
+                            <button class="preset-btn" data-temp="4000">Neutral</button>
+                            <button class="preset-btn" data-temp="6500">Cool</button>
+                        </div>
+                        <div class="control-row">
+                            <button id="colortemp-btn" class="control-btn">
+                                <span class="btn-text">Set Color Temp</span>
+                                <div class="loading-spinner" style="display: none;"></div>
+                            </button>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="colortemp-force-on" checked> Force On
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lighting Scenarios Panel -->
+        <section class="dashboard-card scenarios-panel">
+            <div class="card-header">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <h2>Lighting Scenarios</h2>
+            </div>
+            <div class="card-content">
+                <div class="scenarios-grid">
+                    <button class="scenario-btn" data-brightness="65" data-colortemp="2200">
+                        <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3v18m-6-6l6 6 6-6"/>
+                        </svg>
+                        <span class="scenario-name">Cozy</span>
+                        <span class="scenario-details">2200K • 25%</span>
+                    </button>
+                    <button class="scenario-btn" data-brightness="150" data-colortemp="2700">
+                        <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                        </svg>
+                        <span class="scenario-name">Coffee Shop</span>
+                        <span class="scenario-details">2700K • 60%</span>
+                    </button>
+                    <button class="scenario-btn" data-brightness="215" data-colortemp="5000">
+                        <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="4"/>
+                            <path d="M12 8v8M8 12h8"/>
+                        </svg>
+                        <span class="scenario-name">Daylight</span>
+                        <span class="scenario-details">5000K • 85%</span>
+                    </button>
+                    <button class="scenario-btn" data-brightness="125" data-colortemp="3000">
+                        <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3a6.364 6.364 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                        </svg>
+                        <span class="scenario-name">Evening</span>
+                        <span class="scenario-details">3000K • 50%</span>
+                    </button>
+                    <button class="scenario-btn" data-brightness="200" data-colortemp="6000">
+                        <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2l3 6h5l3-6M14 13H8l-2 8h12l-2-8Z"/>
+                        </svg>
+                        <span class="scenario-name">Focus</span>
+                        <span class="scenario-details">6000K • 80%</span>
+                    </button>
+                    <button class="scenario-btn" data-brightness="50" data-colortemp="2000">
+                        <svg class="scenario-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span class="scenario-name">Relax</span>
+                        <span class="scenario-details">2000K • 20%</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Status Panel -->
+        <section class="dashboard-card status-panel">
+            <div class="card-header">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <h2>Activity Log</h2>
+            </div>
+            <div class="card-content">
+                <div id="status-display" class="status-display">
+                    <div class="status-item">
+                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        <div class="status-content">
+                            <strong>Ready:</strong> Enter a light IP address or scan for lights to get started.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
